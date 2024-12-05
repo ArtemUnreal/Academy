@@ -4,39 +4,34 @@
 
 using namespace std;
 
-string longestPalindrome(string s)
-{
-    int max_len = 0;
-    string result = "";
-    for (int start = 0; start < s.length(); ++start)
+string longestPalindrome(string s) 
     {
-        for (int end = s.length() - 1; end >= start; --end)
+        int n = s.length();
+        if (n <= 1) return s; 
+
+        int start = 0, max_len = 0;
+
+        auto expandAroundCenter = [&](int left, int right) 
         {
-            int left = start;
-            int right = end;
-
-            while (left < right)
+            while (left >= 0 && right < n && s[left] == s[right]) 
             {
-                if (s[left] != s[right])
-                {
-                    break;
-                }
-
-                ++left;
-                --right;
+                --left;
+                ++right;
             }
 
-            if (left >= right)
+            int len = right - left - 1;
+            if (len > max_len) 
             {
-                if (end - start + 1 > max_len)
-                {
-                    max_len = end - start + 1;
-                    result = s.substr(start, max_len);
-                }
+                max_len = len;
+                start = left + 1;
             }
-            
+        };
+
+        for (int i = 0; i < n; ++i) 
+        {
+            expandAroundCenter(i, i);
+            expandAroundCenter(i, i + 1);
         }
-    }
 
-    return result;
-}
+        return s.substr(start, max_len);
+    }
