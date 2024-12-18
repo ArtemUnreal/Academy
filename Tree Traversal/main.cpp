@@ -39,91 +39,145 @@ TreeNode* BuildTree()
     return root;
 }
 
-bool HasLeftNext(TreeNode* root)
+class ReverseOrderTree
 {
-    return root->left != nullptr;
-}
-
-bool HasRightNext(TreeNode* root)
-{
-    return root->right != nullptr;
-}
-
-void Traversal(TreeNode* root) {
-    if (root == nullptr) return;
-
-    std::stack<TreeNode*> parents;
-    TreeNode* current = root;
-    TreeNode* lastVisited = nullptr;
-    int count = 0;
-;
-    while (current != nullptr || !parents.empty())
+public:
+    ReverseOrderTree(TreeNode* root)
     {
-        //1 rld
-        while (HasLeftNext(current) && current->left != lastVisited)
+        m_parents.push(root);
+        m_node = root;
+    }
+    
+    bool hasNext()
+    {
+        return m_node != nullptr || !m_parents.empty();
+    }
+    
+    TreeNode* next()
+    {
+        if (!hasNext()) return nullptr;
+
+        // 1 roll down left
+        if (m_node->left)
         {
-            parents.push(current);
-            count++;
-            current = current->left;
+            m_node = rollDownLeft(m_node);
+            return m_node;
         }
 
-        if (!current->right)
+        // 2 left up right shift -> roll down left | right shift if no left child
+        m_node = leftUp();
+        m_node = rightShift(m_node);
+        
+        if (m_node->left)
         {
-            std::cout << "VAl  " << current->val << " " << std::endl;
-            sleep(1);
+            m_node = rollDownLeft(m_node);
+            return m_node;
+        }
+        else if (m_node->right)
+        {
+            m_node = rightShift(m_node);
         }
 
-        // left up right shift ->rld
-        current = parents.top();
+        //right up if was right up | right shift no rdl
 
-        if (current->right && current->right != lastVisited)
+        if (!isDirectionLeftUp(m_node))
         {
-            current = current->right;
-            //rld in left up right shift
-            if (current->left)
-            {
-                while (HasLeftNext(current))
-                {
-                    parents.push(current);
-                    current = current->left;
-                }
-            }
-            else if (current->right) //right shift if no left child
-            {
-                current = current->right;
-                continue;
-            }
-
-            lastVisited = current;
-
-            //std::cout << "Last visited: " << lastVisited->val << std::endl;
-        }
-        else // right up
-        {
-            //std::cout << "ELse: " <<  current->val << " " << parents.top()->val << " ";
-            std::cout << "Val: " << current->val << std::endl; 
-            lastVisited = current;
-            parents.pop();
-            current = parents.top();
-            //std::cout << "CURENT " << current->val << std::endl;
+            m_node = rightUp(m_node);
         }
 
-        if (current->right == lastVisited) // right up if was right up
-        {
-            std::cout << parents.top()->val << std::endl;
-            parents.pop();
-            current = parents.top()->right;
-        }
+        //backtracking:
+        //1. parent memo: here: stack of parents
 
+
+
+
+        //2. when come to parent: check direction right or left
 
     }
+  
+private:
+    std::stack<TreeNode*> m_parents;
+    TreeNode* m_node = nullptr;
+    
+    TreeNode* rollDownLeft(TreeNode* node)
+    {
+        TreeNode* current = node;
+        
+        while (current->left)
+        {
+            m_parents.push(current);
+            current = current->left;
+        }
+        
+        return current;
+    }
+    
+    TreeNode* leftUp()
+    {
+        TreeNode* current = m_parents.top();
+        m_parents.pop();
+        
+        return current;
+    }
+    
+    TreeNode* rightUp(TreeNode* node)
+    {
+        while (!m_parents.empty())
+        {
+            TreeNode* parent = m_parents.top();
+            m_parents.pop();
+
+            if (parent->right == node)
+            {
+                node = parent; 
+            }
+            else
+            {
+                m_parents.push(parent);
+                return parent;
+            }
+        }
+
+        return nullptr; 
+    }
+    
+    TreeNode* rightShift(TreeNode* node)
+    {
+        if (node == nullptr) return;
+
+        if (node->right)
+        {
+            return node->right;
+        }
+
+        return nullptr;
+    }
+    
+    bool isDirectionLeftUp(TreeNode* nodeChild)
+    {
+        if (nodeChild == m_parents.top()->left)
+        {
+            return true;
+        }
+        return false;
+    }
+};
+
+void Traversal(ReverseOrderTree& tree) 
+{
+  
 }
 
 int main()
 {
     TreeNode* tree = BuildTree();
+    ReverseOrderTree orderTree(tree);
 
-    Traversal(tree);
+    while (orderTree.hasNext())
+    {
+        TreeNode* node = orderTree.next();
+        std::cout << node->val << " ";
+    }
 
     std::cout << std::endl;
 
