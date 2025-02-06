@@ -68,11 +68,9 @@ public:
         m_node = leftUp();
         m_node = rightShift(m_node);
         
-        if (m_node->left)
-        {
-            m_node = rollDownLeft(m_node);
-            return m_node;
-        }
+        m_node = rollDownLeft(m_node);
+        return m_node;
+    
         else if (m_node->right)
         {
             m_node = rightShift(m_node);
