@@ -1,39 +1,33 @@
 #include <iostream>
-#include <streambuf>
+#include <string>
 
-class LineBreak { };
-
-class LineBreakProxy 
+class NewLineInserter 
 {
 public:
-    std::ostream& os;
-    explicit LineBreakProxy(std::ostream& os_) : os(os_) { }
-    
+    explicit NewLineInserter(std::ostream& os) : wrapped(os) 
+    {}
+
     template <typename T>
-    LineBreakProxy& operator<<(const T& value) 
+    NewLineInserter& operator<<(const T& value) 
     {
-        os << value;
+        wrapped << value;
         return *this;
     }
-    
-    typedef std::ostream& (*OStreamManipulator)(std::ostream&);
-    LineBreakProxy& operator<<(OStreamManipulator manip) 
+
+    NewLineInserter& operator<<(std::ostream& (*func)(std::ostream&)) 
     {
-        manip(os);
+        func(wrapped);  
+        wrapped << '\n'; 
         return *this;
     }
+
+private:
+    std::ostream& wrapped;
 };
 
-LineBreakProxy operator<<(std::ostream& os, const LineBreak&) 
-{
-    os.put(os.widen(10));
-    os.flush();
-    return LineBreakProxy(os);
-}
-
 int main() {
-    std::cout << "First" << LineBreak() 
-              << "Second" << LineBreak() 
-              << 200 << LineBreak();
+    NewLineInserter c_out(std::cout);
+    c_out << "Hello, world!" << " This is a test. " << std::flush;
+    c_out << 42 << std::flush;
     return 0;
 }
