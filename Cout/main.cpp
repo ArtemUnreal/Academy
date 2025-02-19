@@ -1,33 +1,39 @@
-#include <iostream>
 #include <string>
+#include <iostream>
 
-class NewLineInserter 
+class MyStream : public std::ostream
 {
 public:
-    explicit NewLineInserter(std::ostream& os) : wrapped(os) 
-    {}
-
-    template <typename T>
-    NewLineInserter& operator<<(const T& value) 
+    MyStream(std::ostream& os) : stream(os) { }
+    ~MyStream() { stream << "\n"; }
+    
+    template<typename T>
+    MyStream& operator<<(const T& value)
     {
-        wrapped << value;
-        return *this;
-    }
-
-    NewLineInserter& operator<<(std::ostream& (*func)(std::ostream&)) 
-    {
-        func(wrapped);  
-        wrapped << '\n'; 
+        stream << value;
         return *this;
     }
 
 private:
-    std::ostream& wrapped;
+    std::ostream& stream;
 };
 
-int main() {
-    NewLineInserter c_out(std::cout);
-    c_out << "Hello, world!" << " This is a test. " << std::flush;
-    c_out << 42 << std::flush;
-    return 0;
+class MyCout : public std::ostream
+{
+public:
+    MyCout() : std::ostream(std::cout.rdbuf()) { }
+
+    template <typename T>
+    MyStream operator<<(const T& value)
+    {
+        static_cast<std::ostream&>(*this) << value;
+        
+        return MyStream(*this);
+    }
+};
+
+int main()
+{
+    MyCout my;
+    my << 43;
 }
