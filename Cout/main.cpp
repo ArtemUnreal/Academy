@@ -5,11 +5,12 @@ class MyStream
 {
 public:
     MyStream(std::ostream& os) : stream(os) { }
+    ~MyStream() { stream << "\n"; }
     
     template<typename T>
     MyStream& operator<<(const T& value)
     {
-        stream << value << "\n";
+        stream << value;
         return *this;
     }
 
