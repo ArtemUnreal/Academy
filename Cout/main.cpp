@@ -1,16 +1,15 @@
 #include <string>
 #include <iostream>
 
-class MyStream : public std::ostream
+class MyStream
 {
 public:
     MyStream(std::ostream& os) : stream(os) { }
-    ~MyStream() { stream << "\n"; }
     
     template<typename T>
     MyStream& operator<<(const T& value)
     {
-        stream << value;
+        stream << value << "\n";
         return *this;
     }
 
@@ -18,22 +17,24 @@ private:
     std::ostream& stream;
 };
 
-class MyCout : public std::ostream
+class MyCout 
 {
 public:
-    MyCout() : std::ostream(std::cout.rdbuf()) { }
+    MyCout(std::ostream& os) : stream(os){ }
 
     template <typename T>
     MyStream operator<<(const T& value)
     {
-        static_cast<std::ostream&>(*this) << value;
-        
-        return MyStream(*this);
+        MyStream ms(stream);
+        ms << value;
+        return ms;
     }
+private:
+    std::ostream& stream;
 };
 
 int main()
 {
-    MyCout my;
-    my << 43;
+    MyCout my(std::cout);
+    my << 43 << "HELLO";
 }
