@@ -15,7 +15,7 @@ std::mutex name;
 std::condition_variable cv;
 
 void waiting_thread_func() {
-    std::unique_lock ul(name); // главный поток работает, t поток заблокирован
+    std::unique_lock ul(name); // оба потока актинвы, но какой-то заблокирован на мьютексе
     std::cout << "another: waiting..." << std::endl;
 
     cv.wait(ul); // главный поток работает, t ожидает
@@ -24,10 +24,10 @@ void waiting_thread_func() {
 }
 
 int main() {
-    std::thread t{waiting_thread_func}; // оба потока активны
+    std::thread t{waiting_thread_func}; // main активен, t создан
 
     {
-        std::lock_guard _(name); // главный поток заблокирван, t поток ожидает
+        std::lock_guard _(name); // оба потока актинвы, но какой-то заблокирован на мьютексе
         std::cout << "main: waiting 3 sec..." << std::endl;
     }
     
