@@ -104,12 +104,55 @@ void test_latch_doesnt_reset() {
     PASS();
 }
 
+void test_latch_wait() {
+    Latch latch{3};
+
+    std::atomic<bool> observer_released{false};
+    std::atomic<bool> worker1_released{false};
+    std::atomic<bool> worker2_released{false};
+
+    std::thread observer([&] {
+        latch.wait();
+        observer_released = true;
+    });
+
+
+    std::thread worker1([&] {
+        latch.arrive_and_wait();
+        worker1_released = true;
+    });
+
+    std::thread worker2([&] {
+        latch.arrive_and_wait();
+        worker2_released = true;
+    });
+
+    // Главный поток ждёт и завершает синхронизацию
+    std::this_thread::sleep_for(100ms);
+    latch.arrive_and_wait(); 
+
+    observer.join();
+    worker1.join();
+    worker2.join();
+
+    EXPECT(observer_released.load());
+    EXPECT(worker1_released.load());
+    EXPECT(worker2_released.load());
+
+    auto start = std::chrono::steady_clock::now();
+    latch.wait();
+    auto duration = std::chrono::steady_clock::now() - start;
+    EXPECT(duration < 1ms);
+
+    PASS();
+}
+
 int main() {
     try {
         test_latch_synchronizes_threads();
         test_latch_awaits();
         test_latch_doesnt_reset();
-
+        test_latch_wait();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 1;
