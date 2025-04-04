@@ -22,6 +22,7 @@ public:
         std::unique_lock l{_m};
         if (_counter == 0) 
         {
+            _cv.notify_all();
             return;
         }
         if (--_counter == 0) 
