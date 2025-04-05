@@ -102,6 +102,31 @@ public:
         return value;
     }
 
+    bool try_push(const T& val) 
+    {
+        std::lock_guard<std::mutex> lock(_m);
+        
+        if (_limit > 0 && _queue.size() >= _limit) return false;
+        
+        _queue.push(val);
+        _not_empty_cv.notify_one();
+
+        return true;
+    }
+
+    bool try_pop(T& val) 
+    {
+        std::lock_guard<std::mutex> lock(_m);
+        
+        if (_queue.empty()) return false;
+        
+        val = _queue.front();
+        _queue.pop();
+        _not_limit_cv.notify_one();
+
+        return true;
+    }
+
 private:
     std::mutex _m;
     std::condition_variable _not_empty_cv;
@@ -269,6 +294,24 @@ void test_pop_bulk_partial() {
     PASS();
 }
 
+void test_try_push_pop() 
+{
+    ConcurrentFIFOQueue<int> queue(2);
+
+    // Try push пока не заполнится
+    EXPECT(queue.try_push(1) == true);
+    EXPECT(queue.try_push(2) == true);
+    EXPECT(queue.try_push(3) == false); // лимит достигнут
+
+    // Try pop пока не опустеет
+    int val;
+    EXPECT(queue.try_pop(val) == true && val == 1);
+    EXPECT(queue.try_pop(val) == true && val == 2);
+    EXPECT(queue.try_pop(val) == false); // очередь пуста
+
+    PASS();
+}
+
 int main() {
     try {
         test_multiple_push_pop();
@@ -278,6 +321,7 @@ int main() {
         test_bulk_basic();
         test_push_bulk_partial();
         test_pop_bulk_partial();
+        test_try_push_pop();
 
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
