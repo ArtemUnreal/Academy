@@ -8,7 +8,7 @@ ThreadPool::ThreadPool(size_t num_threads)
         {
             while(true)
             {
-                std::function<void()> task;
+                Task task;
 
                 {
                     std::unique_lock<std::mutex> lock(_queue_mutex);
@@ -16,11 +16,11 @@ ThreadPool::ThreadPool(size_t num_threads)
 
                     if (_stop && _tasks.empty()) return;
 
-                    task = std::move(_tasks.front());
+                    task = _tasks.top();
                     _tasks.pop();
                 }
 
-                task();
+                task.func();
             }
         });
     }
@@ -41,12 +41,17 @@ ThreadPool::~ThreadPool()
     }
 }
 
-void ThreadPool::enqueue(std::function<void()> task)
+void ThreadPool::enqueue(int priority, std::function<void()> task) 
 {
     {
         std::unique_lock<std::mutex> lock(_queue_mutex);
-        _tasks.emplace(std::move(task));
+        _tasks.emplace(priority, std::move(task));
     }
 
     _cv.notify_all();
+}
+
+void ThreadPool::enqueue(std::function<void()> task) 
+{
+    enqueue(0, std::move(task));
 }

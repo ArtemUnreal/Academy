@@ -13,5 +13,15 @@ int main()
         });
     }
 
+    pool.enqueue(3, [] {
+        std::cout << "High priority task executed\n";
+    });
+    pool.enqueue(1, [] {
+        std::cout << "Low priority task executed\n";
+    });
+    pool.enqueue(2, [] {
+        std::cout << "Medium priority task executed\n";
+    });
+
     return 0;
 }
